@@ -838,12 +838,27 @@ export default function Admin() {
                            <div>
                              <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none">AI MCQ Generator</h3>
                              <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mt-1">
-                               {hasAiKey ? 'Powered by Google Gemini' : 'Configuration Required'}
+                               {hasAiKey ? 'Powered by Google Gemini' : 'AI Setup Required in Secrets Tab'}
                              </p>
                            </div>
                         </div>
 
-                        {!hasAiKey ? null : (
+                        {!hasAiKey ? (
+                          <div className="p-8 bg-indigo-800/50 rounded-2xl border-2 border-indigo-700/50 text-center">
+                            <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-4" />
+                            <h4 className="text-white font-black uppercase tracking-widest mb-2">AI API Key Missing</h4>
+                            <p className="text-indigo-200 text-[10px] font-medium mb-6 leading-relaxed">
+                              You are logged in as admin, but the AI API Key is not set. 
+                              Go to **Settings &gt; Secrets** in the panel and add `APP_GEMINI_KEY`.
+                            </p>
+                            <button 
+                              onClick={() => window.open('https://aistudio.google.com/app/apikey', '_blank')}
+                              className="px-6 py-3 bg-brand-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-secondary transition-all"
+                            >
+                              Get Free API Key
+                            </button>
+                          </div>
+                        ) : (
                           <div className="space-y-6">
                             {status && (status.message.includes('DEPLOY') || status.message.includes('generated') || status.message.includes('AI Magic')) && (
                                <div className={`p-4 rounded-xl text-xs font-bold ${status.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
