@@ -25,8 +25,21 @@ export default function App() {
   const [badges, setBadges] = useState<Record<string, number>>({});
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [logoClicks, setLogoClicks] = useState(0);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
+    return localStorage.getItem('isAdminUnlocked') === 'true';
+  });
 
   useEffect(() => {
+    if (logoClicks >= 5) {
+      if ('vibrate' in navigator) navigator.vibrate([10, 50, 10]);
+      setIsAdminUnlocked(current => {
+        const newState = !current;
+        localStorage.setItem('isAdminUnlocked', String(newState));
+        return newState;
+      });
+      setLogoClicks(0);
+    }
+
     if (logoClicks > 0) {
       const timer = setTimeout(() => {
         setLogoClicks(0);
@@ -195,9 +208,9 @@ export default function App() {
           <Notifications role={role} />
         </React.Suspense>
       );
-      case 'admin': return role === 'admin' ? (
+      case 'admin': return isAdminUnlocked || role === 'admin' ? (
         <React.Suspense fallback={<SectionLoading />}>
-          <Admin user={user} />
+          <Admin user={user} isAdminUnlocked={isAdminUnlocked} />
         </React.Suspense>
       ) : <Auth />;
       case 'login': return <Auth />;
@@ -226,6 +239,7 @@ export default function App() {
         onInstallClick={handleInstallClick}
         showInstallButton={!!deferredPrompt}
         badges={badges}
+        isAdminUnlocked={isAdminUnlocked}
         onLogoClick={handleLogoClick}
       />
       
