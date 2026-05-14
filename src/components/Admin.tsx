@@ -7,10 +7,36 @@ import { motion, AnimatePresence } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/errorHandlers';
 import { generateMCQs, GeneratedQuestion, isAiAvailable } from '../services/geminiService';
 
-export default function Admin() {
+export default function Admin({ user }: { user: any }) {
+  const isAdminUser = user?.email?.toLowerCase().trim() === 'mehaalkhan.2@gmail.com';
+  
+  if (!user || !isAdminUser) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="vibrant-card !p-12 text-center max-w-sm"
+        >
+          <div className="w-20 h-20 bg-rose-50 rounded-[32px] flex items-center justify-center mx-auto mb-6">
+            <ShieldCheck className="w-10 h-10 text-rose-500" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tight">Access Forbidden</h2>
+          <p className="text-slate-500 font-medium text-sm leading-relaxed mb-8">
+            This module is restricted to system administrators. Your account ({user?.email || 'Unknown User'}) does not have permission.
+          </p>
+          <button 
+            onClick={() => (window as any).setActiveSection('lectures')}
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-primary transition-all"
+          >
+            Return to Lectures
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState<'lectures' | 'results' | 'notes' | 'quizzes' | 'inquiries' | 'notifications'>('lectures');
-  const user = auth.currentUser;
-  const isAdminUser = user?.email === 'mehaalkhan.2@gmail.com';
   const [loading, setLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -230,6 +256,10 @@ export default function Admin() {
   };
 
   const handleCreateQuiz = async () => {
+    if (!user) {
+      setStatus({ type: 'error', message: 'You must be logged in to create content.' });
+      return;
+    }
     if (!quizData.title.trim()) {
       setStatus({ type: 'error', message: 'Quiz Title is required to create a new practice test.' });
       return;
@@ -280,6 +310,10 @@ export default function Admin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setStatus({ type: 'error', message: 'Auth session missing. Please refresh.' });
+      return;
+    }
     if (activeTab === 'quizzes') return; // Handled by specific functions
     setLoading(true);
     setStatus(null);
