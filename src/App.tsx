@@ -28,6 +28,7 @@ export default function App() {
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
     return localStorage.getItem('isAdminUnlocked') === 'true';
   });
+  const [settings, setSettings] = useState<{ logoUrl?: string; academyName?: string }>({});
 
   useEffect(() => {
     if (logoClicks >= 5) {
@@ -120,6 +121,40 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    // Fetch global settings
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'app_config'), (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings(snapshot.data());
+      }
+    }, (error) => {
+      console.warn("Settings fetch error:", error.message);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const triggerBadge = async (section: string) => {
+    try {
+      const { getCountFromServer } = await import('firebase/firestore');
+      const collRef = collection(db, section);
+      const snapshot = await getCountFromServer(collRef);
+      const currentCount = snapshot.data().count;
+      
+      const lastSeen = JSON.parse(localStorage.getItem('lastSeenCounts') || '{}');
+      const previousCount = lastSeen[section] || 0;
+      
+      if (currentCount > previousCount) {
+        setBadges(prev => ({
+          ...prev,
+          [section]: currentCount - previousCount
+        }));
+      }
+    } catch (e) {
+      console.warn(`Failed to trigger badge for ${section}:`, e);
+    }
+  };
+
   const handleSectionClick = async (section: string) => {
     setActiveSection(section);
     
@@ -210,10 +245,10 @@ export default function App() {
       );
       case 'admin': return isAdminUnlocked || role === 'admin' ? (
         <React.Suspense fallback={<SectionLoading />}>
-          <Admin user={user} isAdminUnlocked={isAdminUnlocked} />
+          <Admin user={user} isAdminUnlocked={isAdminUnlocked} triggerBadge={triggerBadge} settings={settings} />
         </React.Suspense>
-      ) : <Auth />;
-      case 'login': return <Auth />;
+      ) : <Auth settings={settings} />;
+      case 'login': return <Auth settings={settings} />;
       default: return <Lectures role={role} />;
     }
   };
@@ -241,6 +276,7 @@ export default function App() {
         badges={badges}
         isAdminUnlocked={isAdminUnlocked}
         onLogoClick={handleLogoClick}
+        settings={settings}
       />
       
       <main className="max-w-7xl mx-auto p-4 md:p-10 pb-20">
